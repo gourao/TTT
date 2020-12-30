@@ -76,34 +76,43 @@ def simulate(board, currentTurn):
     print("Running simulation on ")
     printBoard(boardCopy)
 
-    openSpot = ''
+    # 1. Breadth first search for a winning spot
     for key in boardCopy:
         if boardCopy[key]  == ' ':
-            if openSpot == '':
-                openSpot = key
-                print("Trying openspot ", openSpot)
-
+            print("Trying breadth search on openspot ", key)
             boardCopy[key] = currentTurn
 
             if winLogic(boardCopy, currentTurn):
                 # Base case, win found
-                print('WIN by ', currentTurn, " at ", key)
+                print('Detected win by ', currentTurn, " at ", key)
                 return currentTurn, key
 
+            # Try the next position in the board (Breadth first search).
+            print("Resetting Board")
+            boardCopy[key] = ' '
+
+    # 2. If we get here, then no breadth first win detected, so try Depth first
+    # search for a win (or loss to the opponent) This is the recursive case
+    openSpot = ''
+    for key in boardCopy:
+        if boardCopy[key]  == ' ':
+            print("Trying depth search on openspot ", key)
+            if openSpot == '':
+                openSpot = key
+
+            boardCopy[key] = currentTurn
+            if currentTurn == 'O':
+                winner, pos  = simulate(boardCopy, 'X')
             else:
-                # Recursive case
-                if currentTurn == 'O':
-                    winner, pos  = simulate(boardCopy, 'X')
-                else:
-                    winner, pos = simulate(boardCopy, 'O')
+                winner, pos = simulate(boardCopy, 'O')
 
-                if winner != '':
-                    # There is a winner... we need to take that spot.  If it
-                    # is currentTurn, we will win.  Else we will block the
-                    # opponent.
-                    return winner, pos
+            if winner != '':
+                # There is a winner... we need to take that spot.  If it
+                # is currentTurn, we will win.  Else we will block the
+                # opponent.
+                return winner, pos
 
-            # Iterative case... Try the next position in the board.
+            # Try the next position in the board (Breadth first search).
             print("Resetting Board")
             boardCopy[key] = ' '
 
@@ -112,9 +121,11 @@ def simulate(board, currentTurn):
     if openSpot == '':
         print("Board full")
     else:
-        print("No win for ", currentTurn, "... Returning ", openSpot)
+        print("No win for ", currentTurn, "... Returning any open spot ", openSpot)
     return '', openSpot
 
+# Bugs
+# 1. Moves 4, 1, 7 by user is not being detected
 
 # Now we'll write the main function which has all the gameplay functionality.
 def game():
@@ -128,6 +139,16 @@ def game():
             winner, move = simulate(masterBoard, turn)
             if winner != '':
                 print("Simulate detected that ", winner, " will win at ", move)
+            if move == '':
+                print("Game Over. It's a Tie!")
+                sys.exit()
+
+            # Special case tic tac toe logic - if the middle position is still
+            # open and we don't have a winner, pick that spot since the
+            # computer is going second
+            if count > 0 and masterBoard["5"] == ' ':
+                print("Computer taking open mid position")
+                move = "5"
         else:
             print("It's your turn, " + turn + ". Move to which place?")
             move = input()
@@ -143,27 +164,19 @@ def game():
         # Because the min # after which someone can win is in 5 counted moves from both.
         if count >= 5:
             if winLogic(masterBoard, turn):
-                print("Gane Over.  ", turn, " Won!")
+                print("Game Over. ", turn, " Won!")
                 sys.exit()
-
 
         # If neither X nor O wins and the board is full, we'll declare the result as 'tie'.
         if count == 9:
             print("Game Over. It's a Tie!")
+            sys.exit()
 
         # Now we have to change the player after every move.
         if turn =='X':
             turn = 'O'
         else:
             turn = 'X'
-
-    # Now we will ask if player wants to restart the game or not.
-    restart = input("Do want to play Again?(y/n)")
-    if restart == "y" or restart == "Y":
-        for key in boardKeys:
-            masterBoard[key] = " " #erases everything
-
-        game()
 
 if __name__ == "__main__":
     game()
