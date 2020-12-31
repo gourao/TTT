@@ -75,6 +75,7 @@ def simulate(board, currentTurn):
     printBoard(board)
 
     # 1. Breadth first search for a winning spot
+
     boardCopy = dict(board)
     for key in boardCopy:
         if boardCopy[key]  == ' ':
@@ -93,6 +94,7 @@ def simulate(board, currentTurn):
     # search for a win (or loss to the opponent) This is the recursive case
     boardCopy = dict(board)
     openSpot = ''
+    # Note: We are now simulating the opponent
     for key in boardCopy:
         if boardCopy[key]  == ' ':
             print("Trying depth search on openspot ", key)
@@ -107,7 +109,9 @@ def simulate(board, currentTurn):
             else:
                 winner, pos = simulate(boardCopy, 'O')
 
+            # BUG - does not account for this not being the last move
             # This is the minimax part...
+            # BUG XXX dont return here... exhaust all options and weigh them...
             if winner == currentTurn:
                 # We (currentTurn) wins if we take this spot we ocupied.
                 return winner, key
