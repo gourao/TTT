@@ -72,54 +72,56 @@ def winLogic(board, turn):
 
 # Returns winner and position that will cause the win
 def simulate(board, currentTurn):
-    boardCopy = dict(board) #create a copy of masterBoard dictionary
-    print("Running simulation on ")
-    printBoard(boardCopy)
+    print("Running simulation for ", currentTurn)
+    printBoard(board)
 
     # 1. Breadth first search for a winning spot
+    boardCopy = dict(board)
     for key in boardCopy:
         if boardCopy[key]  == ' ':
             print("Trying breadth search on openspot ", key)
             boardCopy[key] = currentTurn
 
             if winLogic(boardCopy, currentTurn):
-                # Base case, win found
+                # Base case, win found.  We win if we take this spot.
                 print('Detected win by ', currentTurn, " at ", key)
                 return currentTurn, key
 
             # Try the next position in the board (Breadth first search).
-            print("Resetting Board")
             boardCopy[key] = ' '
 
     # 2. If we get here, then no breadth first win detected, so try Depth first
     # search for a win (or loss to the opponent) This is the recursive case
+    boardCopy = dict(board)
     openSpot = ''
     for key in boardCopy:
         if boardCopy[key]  == ' ':
             print("Trying depth search on openspot ", key)
+            boardCopy[key] = currentTurn
+
+            # This is just for detecting if we had any move open at all.
             if openSpot == '':
                 openSpot = key
 
-            boardCopy[key] = currentTurn
             if currentTurn == 'O':
                 winner, pos  = simulate(boardCopy, 'X')
             else:
                 winner, pos = simulate(boardCopy, 'O')
 
-            if winner != '':
-                # There is a winner... we need to take that spot.  If it
-                # is currentTurn, we will win.  Else we will block the
-                # opponent.
+            # This is the minimax part...
+            if winner == currentTurn:
+                # We (currentTurn) wins if we take this spot we ocupied.
+                return winner, key
+            elif winner != '':
+                # Opponent wins, we need to block that spot.
                 return winner, pos
 
             # Try the next position in the board (Breadth first search).
-            print("Resetting Board")
             boardCopy[key] = ' '
 
     # If we get here, there was no winner
-    # if openSpot == '', then the board was full
     if openSpot == '':
-        print("Board full")
+        print("Board full... Tie")
     else:
         print("No win for ", currentTurn, "... Returning any open spot ", openSpot)
     return '', openSpot
@@ -138,14 +140,15 @@ def game():
             print("It's " + turn + "'s turn!")
             winner, move = simulate(masterBoard, turn)
             if winner != '':
-                print("Simulate detected that ", winner, " will win at ", move)
+                print("Simulate detected that ", winner, " can win by taking position ", move)
             if move == '':
                 print("Game Over. It's a Tie!")
                 sys.exit()
 
             # Special case tic tac toe logic - if the middle position is still
             # open and we don't have a winner, pick that spot since the
-            # computer is going second
+            # computer is going second.  This is purely a non algorithmic
+            # optimization for Tic Tac Toe.
             if count > 0 and masterBoard["5"] == ' ':
                 print("Computer taking open mid position")
                 move = "5"
@@ -166,11 +169,6 @@ def game():
             if winLogic(masterBoard, turn):
                 print("Game Over. ", turn, " Won!")
                 sys.exit()
-
-        # If neither X nor O wins and the board is full, we'll declare the result as 'tie'.
-        if count == 9:
-            print("Game Over. It's a Tie!")
-            sys.exit()
 
         # Now we have to change the player after every move.
         if turn =='X':
