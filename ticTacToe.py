@@ -16,12 +16,6 @@ masterBoard = {'7': ' ' , '8': ' ' , '9': ' ' ,
             '4': ' ' , '5': ' ' , '6': ' ' ,
             '1': ' ' , '2': ' ' , '3': ' ' }
 
-boardKeys = []
-
-for key in masterBoard:
-    # generates this list: ['7', '8', '9', '4', '5', '6', '1', '2', '3'] BUT WHY?
-    boardKeys.append(key)
-
 '''We will have to print the updated board after every move in the game and
     thus we will make a function in which we'll define the printBoard function
     so that we can easily print the board everytime by calling this function.'''
@@ -75,59 +69,70 @@ def simulate(board, currentTurn):
     printBoard(board)
 
     # 1. Breadth first search for a winning spot
-
+    found = false
     boardCopy = dict(board)
     for key in boardCopy:
         if boardCopy[key]  == ' ':
+            found = true
             print("Trying breadth search on openspot ", key)
             boardCopy[key] = currentTurn
 
             if winLogic(boardCopy, currentTurn):
                 # Base case, win found.  We win if we take this spot.
                 print('Detected win by ', currentTurn, " at ", key)
-                return currentTurn, key
+                return currentTurn, key, 100.0
 
             # Try the next position in the board (Breadth first search).
             boardCopy[key] = ' '
 
+    if found == false:
+        # No open spots, tie board
+        return '', '', 100.0
+
     # 2. If we get here, then no breadth first win detected, so try Depth first
     # search for a win (or loss to the opponent) This is the recursive case
     boardCopy = dict(board)
-    openSpot = ''
+    bestRank = 0.0
+    bestWinner = ''
+    bestPos = ''
     # Note: We are now simulating the opponent
     for key in boardCopy:
         if boardCopy[key]  == ' ':
             print("Trying depth search on openspot ", key)
             boardCopy[key] = currentTurn
 
-            # This is just for detecting if we had any move open at all.
-            if openSpot == '':
-                openSpot = key
-
             if currentTurn == 'O':
-                winner, pos  = simulate(boardCopy, 'X')
+                winner, pos, rank  = simulate(boardCopy, 'X')
             else:
-                winner, pos = simulate(boardCopy, 'O')
+                winner, pos, rank = simulate(boardCopy, 'O')
 
-            # BUG - does not account for this not being the last move
-            # This is the minimax part...
-            # BUG XXX dont return here... exhaust all options and weigh them...
             if winner == currentTurn:
                 # We (currentTurn) wins if we take this spot we ocupied.
-                return winner, key
+                pos = key
             elif winner != '':
                 # Opponent wins, we need to block that spot.
-                return winner, pos
+                pos = pos
+            else:
+                # XXX FIXME Tie board
+                pos = key
+
+            # Rank reduces as you go down the tree
+            rank = rank / 2.0
+
+            if rank > bestRank:
+                bestWinner = winner
+                bestPos = pos
+                bestRank = rank
 
             # Try the next position in the board (Breadth first search).
             boardCopy[key] = ' '
 
-    # If we get here, there was no winner
-    if openSpot == '':
-        print("Board full... Tie")
-    else:
-        print("No win for ", currentTurn, "... Returning any open spot ", openSpot)
-    return '', openSpot
+    # Return the best results for this round at this depth
+    print("Simulation results for ", currentTurn,
+          " Winner: ", bestWinner,
+          " Position: ", bestPos,
+          " Rank: ", bestRank)
+    return bestWinner, bestPos, bestRank
 
 # Bugs
 # 1. Moves 4, 1, 7 by user is not being detected
@@ -137,18 +142,22 @@ def game():
     turn = 'X'
     round = 0
     for i in range(10): #iterate 9 times
+        print("\n\n\n\n\n\n---------------------------------------------\n\n\n")
         print("Round ", round, "... Board Layout:")
         printBoard(masterBoard)
 
         if turn == 'O': #if O's turn
             print("It's " + turn + "'s turn!")
-            winner, move = simulate(masterBoard, turn)
+            winner, move, rank = simulate(masterBoard, turn)
             if winner != '':
-                print("Simulate detected that ", winner, " can win by taking position ", move)
+                print("Simulate detected that ",
+                      winner, " can win by taking position ", move,
+                      " with a rank of ", rank)
             if move == '':
                 print("Game Over. It's a Tie!")
                 sys.exit()
 
+            # XXX TODO is this needed?
             # Special case tic tac toe logic - if the middle position is still
             # open and we don't have a winner, pick that spot since the
             # computer is going second.  This is purely a non algorithmic
