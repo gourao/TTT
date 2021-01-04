@@ -63,6 +63,10 @@ def winLogic(board, turn):
         value = True
     return value
 
+WIN = 100.0
+LOSE = -100.0
+TIE = 50.0
+
 # Returns winner and position that will cause the win
 def simulate(board, currentTurn):
     print("Running simulation for ", currentTurn)
@@ -80,19 +84,19 @@ def simulate(board, currentTurn):
             if winLogic(boardCopy, currentTurn):
                 # Base case, win found.  We win if we take this spot.
                 print('Detected win by ', currentTurn, " at ", key)
-                return currentTurn, key, 100.0
+                return currentTurn, key, WIN
 
             # Try the next position in the board (Breadth first search).
             boardCopy[key] = ' '
 
     if found == false:
         # No open spots, tie board
-        return '', '', 100.0
+        return '', '', TIE
 
     # 2. If we get here, then no breadth first win detected, so try Depth first
     # search for a win (or loss to the opponent) This is the recursive case
     boardCopy = dict(board)
-    bestRank = 0.0
+    bestResult = LOSE
     bestWinner = ''
     bestPos = ''
     # Note: We are now simulating the opponent
@@ -102,27 +106,23 @@ def simulate(board, currentTurn):
             boardCopy[key] = currentTurn
 
             if currentTurn == 'O':
-                winner, pos, rank  = simulate(boardCopy, 'X')
+                winner, pos, result = simulate(boardCopy, 'X')
+
+                # Minimize results for the opponent
+                if result == WIN:
+                    return winner, pos, LOSE
             else:
-                winner, pos, rank = simulate(boardCopy, 'O')
+                winner, pos, result = simulate(boardCopy, 'O')
 
-            if winner == currentTurn:
-                # We (currentTurn) wins if we take this spot we ocupied.
-                pos = key
-            elif winner != '':
-                # Opponent wins, we need to block that spot.
-                pos = pos
-            else:
-                # XXX FIXME Tie board
-                pos = key
+                # Maximize results for us.  Find best possible outcome.
+                # A loss is an immediate no go for this position.
+                if result == LOSE:
+                    return winner, pos, LOSE
+                if result > bestResult:
+                    bestWinner = winner
+                    bestPos = pos
+                    bestResult = result
 
-            # Rank reduces as you go down the tree
-            rank = rank / 2.0
-
-            if rank > bestRank:
-                bestWinner = winner
-                bestPos = pos
-                bestRank = rank
 
             # Try the next position in the board (Breadth first search).
             boardCopy[key] = ' '
@@ -131,8 +131,8 @@ def simulate(board, currentTurn):
     print("Simulation results for ", currentTurn,
           " Winner: ", bestWinner,
           " Position: ", bestPos,
-          " Rank: ", bestRank)
-    return bestWinner, bestPos, bestRank
+          " Result: ", bestResult)
+    return bestWinner, bestPos, bestResult
 
 # Bugs
 # 1. Moves 4, 1, 7 by user is not being detected
@@ -148,11 +148,11 @@ def game():
 
         if turn == 'O': #if O's turn
             print("It's " + turn + "'s turn!")
-            winner, move, rank = simulate(masterBoard, turn)
+            winner, move, result = simulate(masterBoard, turn)
             if winner != '':
                 print("Simulate detected that ",
                       winner, " can win by taking position ", move,
-                      " with a rank of ", rank)
+                      " with a result of ", result)
             if move == '':
                 print("Game Over. It's a Tie!")
                 sys.exit()
