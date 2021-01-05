@@ -13,8 +13,17 @@ import sys
 
 # board is a dictionary. the initial keys to the dictionary are empty strings
 masterBoard = {'7': ' ' , '8': ' ' , '9': ' ' ,
-            '4': ' ' , '5': ' ' , '6': ' ' ,
-            '1': ' ' , '2': ' ' , '3': ' ' }
+               '4': ' ' , '5': ' ' , '6': ' ' ,
+               '1': ' ' , '2': ' ' , '3': ' ' }
+
+debugBoard = {'7': 'X' , '8': ' ' , '9': ' ' ,
+              '4': ' ' , '5': 'O' , '6': ' ' ,
+              '1': 'X' , '2': 'X' , '3': 'O' }
+
+# Outcomes of a board
+WIN = 0x001
+LOSE = 0x010
+TIE = 0x100
 
 '''We will have to print the updated board after every move in the game and
     thus we will make a function in which we'll define the printBoard function
@@ -62,10 +71,6 @@ def winLogic(board, turn):
         print("**** " + turn + " will win (1 - 5 - 9). ****")
         value = True
     return value
-
-WIN = 100.0
-LOSE = -100.0
-TIE = 50.0
 
 # Returns winner and position that will cause the win
 def simulate(board, currentTurn):
@@ -127,15 +132,51 @@ def simulate(board, currentTurn):
             # Try the next position in the board (Breadth first search).
             boardCopy[key] = ' '
 
-    # Return the best results for this round at this depth
     print("Simulation results for ", currentTurn,
           " Winner: ", bestWinner,
           " Position: ", bestPos,
           " Result: ", bestResult)
     return bestWinner, bestPos, bestResult
 
-# Bugs
-# 1. Moves 4, 1, 7 by user is not being detected
+def opposite(turn):
+	if turn == 'O':
+		return 'X'
+	else:
+		return 'O'
+
+def rank(board, currentTurn):
+    print("Ranking board for ", currentTurn)
+    printBoard(board)
+
+    # 1. Breadth first search for a winning spot
+    boardCopy = dict(board)
+	result = 0x0
+    for key in boardCopy:
+        if boardCopy[key]  == ' ':
+            print("Trying breadth search on openspot ", key)
+            boardCopy[key] = currentTurn
+
+            if winLogic(boardCopy, currentTurn):
+                # Base case, win found.  We win if we take this spot.
+				if currentTurn == 'O':
+					result = result | WIN
+				else
+					result = resulty | LOSE
+			else:
+				# Recurse on the next turn
+				result = result | rank(board, opposite(currentTurn))
+
+
+            # Try the next position in the board (Breadth first search).
+            boardCopy[key] = ' '
+
+	if result = 0x0:
+		result = TIE
+
+	return result
+
+def debug(board, currentTurn):
+	return ''
 
 # Now we'll write the main function which has all the gameplay functionality.
 def game():
@@ -190,4 +231,5 @@ def game():
             turn = 'X'
 
 if __name__ == "__main__":
-    game()
+	debug(debugBoard, 'O')
+   	# game()
