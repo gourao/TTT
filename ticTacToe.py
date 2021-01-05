@@ -139,44 +139,106 @@ def simulate(board, currentTurn):
     return bestWinner, bestPos, bestResult
 
 def opposite(turn):
-	if turn == 'O':
-		return 'X'
-	else:
-		return 'O'
+    if turn == 'O':
+        return 'X'
+    else:
+        return 'O'
 
+# Rank a board in it's current layout
 def rank(board, currentTurn):
     print("Ranking board for ", currentTurn)
     printBoard(board)
 
-    # 1. Breadth first search for a winning spot
     boardCopy = dict(board)
-	result = 0x0
+    result = 0x0
     for key in boardCopy:
         if boardCopy[key]  == ' ':
-            print("Trying breadth search on openspot ", key)
             boardCopy[key] = currentTurn
 
             if winLogic(boardCopy, currentTurn):
                 # Base case, win found.  We win if we take this spot.
-				if currentTurn == 'O':
-					result = result | WIN
-				else
-					result = resulty | LOSE
-			else:
-				# Recurse on the next turn
-				result = result | rank(board, opposite(currentTurn))
-
+                if currentTurn == 'O':
+                    result = result | WIN
+                else:
+                    result = result | LOSE
+            else:
+                # Recurse on the next turn
+                result = result | rank(boardCopy, opposite(currentTurn))
 
             # Try the next position in the board (Breadth first search).
             boardCopy[key] = ' '
 
-	if result = 0x0:
-		result = TIE
+    if result == 0x0:
+        result = TIE
 
-	return result
+    return result
 
-def debug(board, currentTurn):
-	return ''
+
+# Chose a suitable move by ranking every open spot
+def run(board):
+    bestKey = ''
+    bestResult = 0x0
+    bestResultStr = ""
+
+    boardCopy = dict(board)
+    for key in boardCopy:
+        if boardCopy[key]  == ' ':
+            print("Trying openspot ", key)
+            boardCopy[key] = 'O'
+
+            result = rank(boardCopy, 'X')
+
+            # For debugging only
+            resultStr = ''
+            if result & WIN:
+                resultStr += ' W '
+            if result & LOSE:
+                resultStr += ' L '
+            if result & TIE:
+                resultStr += ' T '
+            print("Result at ", key, " is ", resultStr)
+
+            # [W] > [W,T] > [T] > [W,T,L] > [W,L] > [T,L] > [L]
+            if bestResult == 0x0:
+                bestResult = result
+                bestKey = key
+                bestResultStr = resultStr
+            elif result == WIN:
+                bestResult = result
+                bestKey = key
+                bestResultStr = resultStr
+            elif result == WIN | TIE:
+                bestResult = result
+                bestKey = key
+                bestResultStr = resultStr
+            elif result == TIE:
+                bestResult = result
+                bestKey = key
+                bestResultStr = resultStr
+            elif result == WIN | TIE | LOSS:
+                bestResult = result
+                bestKey = key
+                bestResultStr = resultStr
+            elif result == WIN | LOSS:
+                bestResult = result
+                bestKey = key
+                bestResultStr = resultStr
+            elif result == TIE | LOSS:
+                bestResult = result
+                bestKey = key
+                bestResultStr = resultStr
+            elif result == LOSS:
+                bestResult = result
+                bestKey = key
+                bestResultStr = resultStr
+
+            # Try the next position in the board (Breadth first search).
+            boardCopy[key] = ' '
+
+    print("Chosing position ", key, " for a result of ", bestResultStr)
+
+def debug():
+    run(debugBoard)
 
 # Now we'll write the main function which has all the gameplay functionality.
 def game():
@@ -231,5 +293,5 @@ def game():
             turn = 'X'
 
 if __name__ == "__main__":
-	debug(debugBoard, 'O')
-   	# game()
+    debug()
+    # game()
